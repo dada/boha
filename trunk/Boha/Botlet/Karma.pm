@@ -1,16 +1,32 @@
-# Karma police
-
-package Boha::Botlet::Karma;
-use Storable;
+# Karma police
 
-$VERSION = '$Id: Karma.pm,v 1.20 2007/10/05 15:01:00 dada Exp $';
-$VERSION =~ /v ([\d.]+)/;$VERSION = $1;
-my $karma_place = 'data/karma';my $karma = {};
+
+package Boha::Botlet::Karma;
+
+use Storable;
+
+
+$VERSION = '$Id: Karma.pm,v 1.20 2007/10/05 15:01:00 dada Exp $';
+
+$VERSION =~ /v ([\d.]+)/;
+$VERSION = $1;
+
+my $karma_place = 'data/karma';
+my $karma = {};
+
 sub onInit {
-	$Storable::accept_future_minor = 1;	$karma = retrieve( $karma_place ) if -e $karma_place;	delete $karma{""};
-}
-sub onPublic {    my($bot, $who, $chan, $msg) = @_;    my $nick = $bot->{ nick };
-    # Per adesso vengono registrare variazioni di karma     # solo quando ci si rivolge esplicitamente a boha.
+	$Storable::accept_future_minor = 1;
+	$karma = retrieve( $karma_place ) if -e $karma_place;
+	delete $karma{""};
+}
+
+sub onPublic {
+    my($bot, $who, $chan, $msg) = @_;
+    my $nick = $bot->{ nick };
+
+    # Per adesso vengono registrare variazioni di karma 
+    # solo quando ci si rivolge esplicitamente a boha.
+
 
     # tranne questa... ;-)
     if($who eq 'dree' and $msg =~ /\bold\b/) {
@@ -20,8 +36,13 @@ sub onPublic {    my($bot, $who, $chan, $msg) = @_;    my $nick = $bot->{ nick
     }
 
 
-    return unless $msg =~ /^$nick: (.*)$/;    my $cmd = $1; 
-    if ( $cmd =~ /^karma\s+(.*)$/ ) {        $bot->say( $chan, $karma->{ $1 } ) if exists $karma->{ $1 };
+    return unless $msg =~ /^$nick: (.*)$/;
+    my $cmd = $1; 
+
+    if ( $cmd =~ /^karma\s+(.*)$/ ) {
+	my $k = get_karma_key($1);
+        $bot->say( $chan, $karma->{ $key } ) if exists $karma->{ $key };
+
     } elsif ( $cmd =~ /^(\s*top\s*)?karma$/i ) {
 	my %rank = ();
 	my $msg = "TOP 10: ";
@@ -70,15 +91,29 @@ sub onPublic {    my($bot, $who, $chan, $msg) = @_;    my $nick = $bot->{ nick
 	$bot->say( $chan, $msg );
     }
 
-    elsif ( $cmd =~ /^(.*)\+\+/ and $1 ) {        $karma->{ $1 }++;        store $karma, $karma_place;    }
-    elsif ( $cmd =~ /^(.*)--/ and $1 ) {        $karma->{ $1 }--;        store $karma, $karma_place;    }
-}
-
-sub onPrivate {
-	my($bot, $who, $rcpt, $msg) = @_;
-	if($msg eq "karma") {
-				
-		$bot->say($who, "TOP 10:");
+    elsif ( $cmd =~ /^(.*)\+\+/ and $1 ) {
+        my $key = get_karma_key($1);
+        $karma->{ $key }++;
+        store $karma, $karma_place;
+    }
+
+    elsif ( $cmd =~ /^(.*)--/ and $1 ) {
+        my $key = get_karma_key($1);
+        $karma->{ $key }--;
+        store $karma, $karma_place;
+    }
+}
+
+
+
+sub onPrivate {
+
+	my($bot, $who, $rcpt, $msg) = @_;
+
+	if($msg eq "karma") {
+
+		$bot->say($who, "TOP 10:");
+
 		my %rank = ();	
 		my %exceed = ();
 		foreach my $k (sort keys %$karma) {
@@ -95,9 +130,12 @@ sub onPrivate {
 
 		$bot->say($who, say10( sub { $b <=> $a }, \%rank, \%exceed));
 
-	}
+	}
+
 	if($msg eq "karma worst") {
-		$bot->say($who, "WORST 10:");		my %rank = ();		my %exceed = ();
+		$bot->say($who, "WORST 10:");
+		my %rank = ();
+		my %exceed = ();
 		foreach my $k (sort keys %$karma) {
 			if(defined $rank{$karma->{$k}}) {
 				if(length($rank{$karma->{$k}}) > 60) {
@@ -112,8 +150,10 @@ sub onPrivate {
 
 		$bot->say($who, say10( sub { $a <=> $b }, \%rank, \%exceed));
 
-	}
-}
+	}
+
+}
+
 
 sub say10 {
 	my($sort, $rank, $exceed) = @_;
@@ -129,21 +169,45 @@ sub say10 {
 	$msg =~ s/; $//;
 	return $msg;
 }
-
-sub onQuit {
-    store $karma, $karma_place;
-}
-
-sub help {
-	my($bot, $who, $topic) = @_;
-	
-	$bot->say($who, "Karma botlet $VERSION");
-	map { $bot->say($who, "per $_") } (		"incrementare il karma di un utente: '$bot->{nick}: <utente>++'",		"decrementare il karma di un utente: '$bot->{nick}: <utente>--'",		"visualizzare il karma di un utente: '$bot->{nick}: karma <utente>'",		"visualizzare il karma dei migliori 10: 'karma' in query",		"visualizzare il karma dei peggiori 10: 'karma worst' in query",	);
-}
-
-sub get_karma {
-	return $karma->{$_[0]};
-}
+
+
+sub onQuit {
+
+    store $karma, $karma_place;
+
+}
+
+
+
+sub help {
+
+	my($bot, $who, $topic) = @_;
+
+	
+
+	$bot->say($who, "Karma botlet $VERSION");
+
+	map { $bot->say($who, "per $_") } (
+		"incrementare il karma di un utente: '$bot->{nick}: <utente>++'",
+		"decrementare il karma di un utente: '$bot->{nick}: <utente>--'",
+		"visualizzare il karma di un utente: '$bot->{nick}: karma <utente>'",
+		"visualizzare il karma dei migliori 10: 'karma' in query",
+		"visualizzare il karma dei peggiori 10: 'karma worst' in query",
+	);
+
+}
+
+
+
+sub get_karma_key {
+	my($key) = $_;
+	my $wanted = uc($key);
+	foreach my $k (keys %$karma) {
+		return $k if uc($k) eq $wanted;
+	}
+	return $key;
+}
+
 
 1;
 
