@@ -40,7 +40,7 @@ sub onPublic {
     my $cmd = $1; 
 
     if ( $cmd =~ /^karma\s+(.*)$/ ) {
-	my $k = get_karma_key($1);
+	my $key = get_karma_key($1);
         $bot->say( $chan, $karma->{ $key } ) if exists $karma->{ $key };
 
     } elsif ( $cmd =~ /^(\s*top\s*)?karma$/i ) {
