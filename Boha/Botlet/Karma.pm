@@ -200,7 +200,7 @@ sub help {
 
 
 sub get_karma_key {
-	my($key) = $_;
+	my($key) = @_;
 	my $wanted = uc($key);
 	foreach my $k (keys %$karma) {
 		return $k if uc($k) eq $wanted;
