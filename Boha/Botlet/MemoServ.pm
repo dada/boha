@@ -36,10 +36,12 @@ sub onPrivate {
 		store $memo, $memo_place;
 	}
 		
-	if($msg =~ /^anonimemo\s+(per\s+)?(\w+|\*):\s*(.*$)/) {	
-		my $to = $2;
-		my $text = $3;
+	if($msg =~ /^anonimemo\s+(per\s+)?(#?)(\w+|\*):\s*(.*$)/) {	
+	    my $to_chan = $2;
+		my $to = $3;
+		my $text = $4;
 		my $id = next_id("*");
+		if($to_chan) { $to = $to_chan.$to; }
 		$memo->{"*:$to:$id"} = $text;
 		store $memo, $memo_place;
 	}
@@ -106,6 +108,7 @@ sub onJoin {
 	}
 	if(not $done) {
 	
+		print STDERR "looking for channel anonimemo: to => $chan\n";
 		# try channel anonimemo
 		if(my $changreet = get_memo(to => $chan)) {
 			$memo = '$who: '.$changreet;		
