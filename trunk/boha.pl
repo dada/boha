@@ -37,7 +37,7 @@ print STDERR map { "loaded botlet $_\n" } $boha->init();
 $boha->{host} = 'irc.freenode.net'; # 'irc.slashdot.org';
 $boha->{nick} = 'boha';
 $boha->{quit} = 'boha vi saluta';
-$boha->{chan} = [ '#perl.it' ]; # [ '#nordest.pm' ];
+$boha->{chan} = [ '#perl.it', '#perl-it' ]; # [ '#nordest.pm' ];
 
 #### creiamo gli oggetti POE che ci servono
 POE::Component::IRC->new( 'boha' ) 
