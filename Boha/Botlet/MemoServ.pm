@@ -37,7 +37,7 @@ sub onPrivate {
 	}
 		
 	if($msg =~ /^anonimemo\s+(per\s+)?(#?)(\S+|\*):\s*(.*$)/) {	
-	        my $to_chan = $2;
+        my $to_chan = $2;
 		my $to = $3;
 		my $text = $4;
 		print STDERR "got anonimemo: $to_chan, $to, $text\n";
@@ -108,11 +108,13 @@ sub onJoin {
 		}
 	}
 	if(not $done) {
-	
-		print STDERR "looking for channel anonimemo: to => $chan\n";
 		# try channel anonimemo
-		if(my $changreet = get_memo(to => $chan)) {
-			$memo = '$who: '.$changreet;		
+		foreach my $char (split undef, $chan) {
+			printf "%s %d\n", $char, ord($char);
+		}
+		my @changreet = get_memo(to => $chan);
+		if(@changreet) {
+			my $memo = "$who: ".$memo->{$changreet[0]->[0]};		
 			$bot->say($chan, $memo);
 		} else {
 			my @anonimemo = get_memo(both => '*');
