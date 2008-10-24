@@ -105,14 +105,21 @@ sub onJoin {
 		}
 	}
 	if(not $done) {
-		my @anonimemo = get_memo(both => '*');
-		return unless @anonimemo;
-		my $pick = rand()*$#anonimemo;
-		my $m = $anonimemo[$pick];
-		my($key, $from) = @$m;
-		my $memo = $memo->{$key};
-		$memo =~ s/<nick>/$who/g;
-		$bot->say($chan, $memo);
+	
+		# try channel anonimemo
+		if(my $changreet = get_memo(to => $chan)) {
+			$memo = '$who: '.$changreet;		
+			$bot->say($chan, $memo);
+		} else {
+			my @anonimemo = get_memo(both => '*');
+			return unless @anonimemo;
+			my $pick = rand()*$#anonimemo;
+			my $m = $anonimemo[$pick];
+			my($key, $from) = @$m;
+			my $memo = $memo->{$key};
+			$memo =~ s/<nick>/$who/g;
+			$bot->say($chan, $memo);
+		}
 	}
 }
 
