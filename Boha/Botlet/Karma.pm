@@ -35,6 +35,20 @@ sub onPublic {
         $bot->say( $chan, "dree: buuuh" );
     }
 
+    # see if we have a valid karma instruction
+    if($msg =~ /^(\S+)(\+\+|--)/
+    or $msg =~ /^\{(.+)\}(\+\+|--)/
+    ) {
+        my($key, $updown) = ($1, $2);
+        $key = get_karma_key($1);
+	if($updown eq '++') {
+	    $karma->{$key}++;
+	} else {
+	    $karma->{$key}--;
+	}
+	$bot->say($chan, "yeah, $updown");
+	return;
+    }
 
     return unless $msg =~ /^$nick: (.*)$/;
     my $cmd = $1; 
