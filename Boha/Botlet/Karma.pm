@@ -46,7 +46,7 @@ sub onPublic {
 	} else {
 	    $karma->{$key}--;
 	}
-	# $bot->say($chan, "yeah, $updown");
+	$bot->say($chan, "yeah, $updown");
 	return;
     }
 
