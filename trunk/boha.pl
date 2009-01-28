@@ -307,31 +307,44 @@ sub irc_notice {
 		return undef;
 	}
 
+    if( $who eq "NickServ"
+    and $rcpt->[0] eq $boha->{nick}
+    and $msg =~ /\*\*\* End of Info \*\*\*/
+    ) {
+        delete $boha->{nickserving};
+    }
+
 	if( $who eq "NickServ"
 	and $rcpt->[0] eq $boha->{nick}
-	and $msg =~ /(\S+) << ONLINE >>/
+	and $msg =~ /Information on (\S+)/
 	) {
-		$boha->auth( $1 );		
-		for my $i (0..@{$boha->{authq}}-1) {
-			my($auth_usr, %event) = @{$boha->{authq}->[$i]};
-			next unless $auth_usr eq $1;			
-			$event{onSuccess}->($auth_usr);
-			splice(@{$boha->{authq}}, $i, 1);			
-		}
-	}
+        $boha->{nickserving} = $1;
+    }
+
 	if( $who eq "NickServ"
 	and $rcpt->[0] eq $boha->{nick}
-	and $msg =~ /Last seen:/
+	and $msg =~ /Last seen\s*:\s*(.*)/
+    and exists $boha->{nickserving}
 	) {
-		$boha->deauth( $1 );
-		for my $i (0..@{$boha->{authq}}-1) {
-			my($auth_usr, %event) = @{$boha->{authq}->[$i]};
-			next unless $auth_usr eq $1;			
-			$event{onFailure}->($auth_usr);
-			splice(@{$boha->{authq}}, $i, 1);			
-		}
+        if($1 eq "now") {
+		    $boha->auth( $boha->{nickserving} );		
+		    for my $i (0..@{$boha->{authq}}-1) {
+	    		my($auth_usr, %event) = @{$boha->{authq}->[$i]};
+    			next unless $auth_usr eq $boha->{nickserving};			
+    			$event{onSuccess}->($auth_usr);
+    			splice(@{$boha->{authq}}, $i, 1);			
+    		}
+        } else {
+	        $boha->deauth( $boha->{nickserving}  );
+		    for my $i (0..@{$boha->{authq}}-1) {
+			    my($auth_usr, %event) = @{$boha->{authq}->[$i]};
+			    next unless $auth_usr eq $boha->{nickserving};			
+			    $event{onFailure}->($auth_usr);
+			    splice(@{$boha->{authq}}, $i, 1);			
+		    }
+	    }
 	}
-	
+
 	dispatch('onNotice', $who, $rcpt, $msg);
 }
 
