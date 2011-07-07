@@ -1,38 +1,52 @@
-# "la cazzata del momento" -- larsen
-
-package Boha::Botlet::Twitter;
+# "la cazzata del momento" -- larsen
 
-use LWP::UserAgent;
-
-$VERSION = '$Id: Twitter.pm,v 1.2 2007/02/07 11:51:00 dada Exp $';
-$VERSION =~ /v ([\d.]+)/;
-$VERSION = $1;
-my $agent = LWP::UserAgent->new();
+package Boha::Botlet::Twitter;
 
-my $twitter_url = "http://twitter.com/statuses/update.json";
+use YAML;
+use Net::Twitter;
 
-#sub onPublic {#    my($bot, $who, $chan, $msg) = @_;#    my $nick = $bot->{ nick };#    return unless $msg =~ /^$nick: (.*)$/;#    my $cmd = $1;#    if ( $cmd =~ /^twitter\s+(.*)$/ ) {#        $bot->say($who, update_twitter($1));#    }#}
+$VERSION = '$Id: Twitter.pm,v 1.2 2007/02/07 11:51:00 dada Exp $';
+$VERSION =~ /v ([\d.]+)/;
+$VERSION = $1;
+
+#sub onPublic {
+#    my($bot, $who, $chan, $msg) = @_;
+#    my $nick = $bot->{ nick };
+#    return unless $msg =~ /^$nick: (.*)$/;
+#    my $cmd = $1;
+#    if ( $cmd =~ /^twitter\s+(.*)$/ ) {
+#        $bot->say($who, update_twitter($1));
+#    }
+#}
+
 sub onTopic {
 	my($bot, $chan, $topic) = @_;
 	print "Twitter.onTopic($chan, $topic)\n";
-	if(update_twitter($topic) !~ /200 OK/i) {
+	if(not update_twitter($topic)) {
 		$bot->say($bot->{chan}, "poor boha"); 
 	}
 }
 
-sub help {	my($bot, $who, $topic) = @_;	$bot->say($who, "Twitter botlet $VERSION");	$bot->say($who, "none of your business");
-}
+sub help {
+	my($bot, $who, $topic) = @_;
+	$bot->say($who, "Twitter botlet $VERSION");
+	$bot->say($who, "none of your business");
+}
+
 sub update_twitter {
 	my($status) = @_;
-	my $response = $agent->post( $twitter_url, { status => $status } );
-	return $response->status_line;
+	my $yaml = YAML::LoadFile("data/twitter.yml");
+	return 0 unless $yaml;
+        my $twitter = Net::Twitter->new(
+		traits   => [qw/OAuth API::REST/],
+		consumer_key        => $yaml->{consumer_key},
+		consumer_secret     => $yaml->{consumer_secret},
+		access_token        => $yaml->{oauth_token},
+		access_token_secret => $yaml->{oauth_token_secret},
+	);
+
+	my $response = $twitter->update( $status );
+	return $response;
 }
-	
 
-sub LWP::UserAgent::get_basic_credentials {
-	my($ua, $realm, $uri, $isproxy) = @_;
-	return ("boha", "imaohabot");
-}
-
-
-1;
+1;
