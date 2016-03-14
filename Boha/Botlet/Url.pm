@@ -15,7 +15,7 @@ sub onPublic {
 
     my $nick = $bot->{ nick };
 
-    return unless $msg =~ /^$nick: (.*)$/;
+    return 0 unless $msg =~ /^$nick: (.*)$/;
 
     $cmd = $1;
     if ( $cmd =~ /^url\s+(.*?)\s+(.*)$/ ) {
@@ -46,9 +46,9 @@ sub onPublic {
                              . "URL e` url <url> <descrizione>"
                      );
         }
+    return 1;
     }
-
-    print "received cmd: '$cmd'\n";
+    return 0;
 }
 
 my $uri_tester = URI::Find->new( sub {} );

@@ -36,7 +36,7 @@ print STDERR map { "loaded botlet $_\n" } $boha->init();
 #### (poi sarà preso da file di conf.)
 $boha->{host} = 'irc.freenode.net'; # 'irc.slashdot.org';
 $boha->{nick} = 'boha';
-$boha->{quit} = 'boha vi saluta';
+$boha->{quit} = 'Dave... ho paura';
 $boha->{chan} = [ '#perl.it', '#perl-it' ]; # [ '#nordest.pm' ];
 
 #### creiamo gli oggetti POE che ci servono
@@ -68,7 +68,8 @@ POE::Session->create(
         irc_quit            => \&irc_quit,
         irc_socketerr         => \&irc_socketerr,
         irc_topic            => \&irc_topic,
-        irc_332                => \&irc_rpl_topic,
+        # disabled because we don't want to twit topic on join
+        # irc_332                => \&irc_rpl_topic,
         mainloop            => \&mainloop,
         get_karma            => \&get_karma,
         get_fact            => \&get_fact,
@@ -256,6 +257,12 @@ sub irc_msg {
         $boha->say( $who, ($boha->is_registered($1)) ? "yes" : "no" );
     }
 
+    if($msg =~ /^YOLO$/) {
+        $boha->auth($who);
+        $boha->say($who, "SWAG!");
+    }
+
+
     if($msg eq "help") {
         $boha->say($who, "sintassi: help <botlet> [<topic>]");
         $boha->say($who, "botlet attivi:");
@@ -309,39 +316,26 @@ sub irc_notice {
 
     if( $who eq "NickServ"
     and $rcpt->[0] eq $boha->{nick}
-    and $msg =~ /\*\*\* End of Info \*\*\*/
+    and $msg =~ /(\S+) << ONLINE >>/
     ) {
-        delete $boha->{nickserving};
+        $boha->auth( $1 );
+        for my $i (0..@{$boha->{authq}}-1) {
+            my($auth_usr, %event) = @{$boha->{authq}->[$i]};
+            next unless $auth_usr eq $1;
+            $event{onSuccess}->($auth_usr);
+            splice(@{$boha->{authq}}, $i, 1);
+        }
     }
-
     if( $who eq "NickServ"
     and $rcpt->[0] eq $boha->{nick}
-    and $msg =~ /Information on (\S+)/
+    and $msg =~ /Last seen:/
     ) {
-        $boha->{nickserving} = $1;
-    }
-
-    if( $who eq "NickServ"
-    and $rcpt->[0] eq $boha->{nick}
-    and $msg =~ /Last seen\s*:\s*(.*)/
-    and exists $boha->{nickserving}
-    ) {
-        if($1 eq "now") {
-            $boha->auth( $boha->{nickserving} );
-            for my $i (0..@{$boha->{authq}}-1) {
-                my($auth_usr, %event) = @{$boha->{authq}->[$i]};
-                next unless $auth_usr eq $boha->{nickserving};
-                $event{onSuccess}->($auth_usr);
-                splice(@{$boha->{authq}}, $i, 1);
-            }
-        } else {
-            $boha->deauth( $boha->{nickserving}  );
-            for my $i (0..@{$boha->{authq}}-1) {
-                my($auth_usr, %event) = @{$boha->{authq}->[$i]};
-                next unless $auth_usr eq $boha->{nickserving};
-                $event{onFailure}->($auth_usr);
-                splice(@{$boha->{authq}}, $i, 1);
-            }
+        $boha->deauth( $1 );
+        for my $i (0..@{$boha->{authq}}-1) {
+            my($auth_usr, %event) = @{$boha->{authq}->[$i]};
+            next unless $auth_usr eq $1;
+            $event{onFailure}->($auth_usr);
+            splice(@{$boha->{authq}}, $i, 1);
         }
     }
 
@@ -372,7 +366,7 @@ sub irc_nick {
 sub irc_topic {
     my($kernel, $who, $chan, $topic) = @_[KERNEL, ARG0 .. ARG2];
 
-    if($topic ne "") {
+    if($topic ne "" and $who ne 'ChanServ') {
         dispatch('onTopic', $chan, $topic);
     }
 }
@@ -421,13 +415,14 @@ sub mainloop {
 sub dispatch {
     my($action, @param) = @_;
 
-    foreach my $botlet (@Boha::botlet) {
+    foreach my $botlet (sort { ${$a."::priority"} <=> ${$b."::priority"} } @Boha::botlet) {
         $event = $botlet."::$action";
+        # warn "dispatching to $botlet\n";
         if( defined &{$event} ) {
             #if($action ne "onTimer") {
             #    print "dispatch -> $event\n";
             #}
-            &{$event}($boha, @param);
+            last if &{$event}($boha, @param);
         }
     }
 }

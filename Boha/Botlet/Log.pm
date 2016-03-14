@@ -14,6 +14,7 @@ $VERSION = $1;
         $who = nick($bot, $who);
         $chan = join ':', @$chan;
         logit("PRIVMSG $who $chan $msg");
+        return 0;
     }
 
     sub onJoin {
@@ -21,6 +22,7 @@ $VERSION = $1;
         $chan = join ':', @$chan;
         $who = nick($bot, $who);
         logit("JOIN $who $chan");
+        return 0;
     }
 
     sub onPart {
@@ -28,6 +30,7 @@ $VERSION = $1;
         $chan = join ':', @$chan;
         $who = nick($bot, $who);
         logit("PART $who $chan");
+        return 0;
     }
 
     sub nick {

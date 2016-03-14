@@ -23,6 +23,7 @@ sub onInit {
 
 sub onPublic {
     my($bot, $who, $chan, $msg) = @_;
+    return 0;
 }
 
 sub onPrivate {
@@ -34,6 +35,7 @@ sub onPrivate {
         my $id = next_id($who);
         $memo->{"$who:$to:$id"} = $text;
         store $memo, $memo_place;
+        return 1;
     }
 
     if($msg =~ /^anonimemo\s+(per\s+)?(#?)(\S+|\*):\s*(.*$)/) {
@@ -45,6 +47,7 @@ sub onPrivate {
         if($to_chan) { $to = $to_chan.$to; }
         $memo->{"*:$to:$id"} = $text;
         store $memo, $memo_place;
+        return 1;
     }
 
     if($msg eq "memo") {
@@ -53,6 +56,7 @@ sub onPrivate {
             $bot->say($who, "[$id] $to: $memo->{$key}");
         }
         $bot->say($who, "fine dei tuoi memo.");
+        return 1;
     }
 
     if($msg eq "anonimemo") {
@@ -61,6 +65,7 @@ sub onPrivate {
             $bot->say($who, "[$id] $to: $memo->{$key}");
         }
         $bot->say($who, "fine dei memo.");
+        return 1;
     }
 
     if($msg =~ /^memo delete (\d+)/) {
@@ -74,6 +79,7 @@ sub onPrivate {
             }
         }
         $bot->say($who, "errore: no such memo '$id'");
+        return 1;
     }
 
     if($msg =~ /^anonimemo delete (\d+)/) {
@@ -87,7 +93,9 @@ sub onPrivate {
             }
         }
         $bot->say($who, "errore: no such memo '$id'");
+        return 1;
     }
+    return 0;
 }
 
 sub onJoin {
@@ -127,6 +135,7 @@ sub onJoin {
             $bot->say($chan, $memo);
         }
     }
+    return 0;
 }
 
 sub onQuit {

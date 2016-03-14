@@ -6,7 +6,7 @@ package Boha::Botlet::Karma;
 use Storable;
 
 
-$VERSION = '$Id: Karma.pm,v 1.20 2007/10/05 15:01:00 dada Exp $';
+$VERSION = '$Id: Karma.pm,v 1.21 2007/10/05 15:01:00 dada Exp $';
 
 $VERSION =~ /v ([\d.]+)/;
 $VERSION = $1;
@@ -17,7 +17,9 @@ my $karma = {};
 sub onInit {
     $Storable::accept_future_minor = 1;
     $karma = retrieve( $karma_place ) if -e $karma_place;
-    delete $karma{""};
+    delete $karma->{""};
+    $karma->{'--'} = {} unless exists $karma->{'--'} and ref($karma->{'--'});
+    $karma->{'++'} = {} unless exists $karma->{'++'} and ref($karma->{'++'});
 }
 
 sub onPublic {
@@ -27,12 +29,12 @@ sub onPublic {
     # Per adesso vengono registrare variazioni di karma
     # solo quando ci si rivolge esplicitamente a boha.
 
-
     # tranne questa... ;-)
     if($who eq 'dree' and $msg =~ /\bold\b/) {
         $karma->{dree}--;
         store $karma, $karma_place;
         $bot->say( $chan, "dree: buuuh" );
+        return 1;
     }
 
     # see if we have a valid karma instruction
@@ -46,16 +48,57 @@ sub onPublic {
         } else {
             $karma->{$key}--;
         }
+        store $karma, $karma_place;
         $bot->say($chan, "yeah, $updown");
-        return;
+        return 1;
     }
 
-    return unless $msg =~ /^$nick: (.*)$/;
+    if ( $msg =~ /^$nick[:,]\s+punisci\s+(.*)$/) {
+        $karma->{'--'}->{$1} = 1;
+        store $karma, $karma_place;
+        return 1;
+    }
+
+    if ( $msg =~ /^$nick[:,]\s+premia\s+(.*)$/) {
+        $karma->{'++'}->{$1} = 1;
+        store $karma, $karma_place;
+        return 1;
+    }
+
+    if ( $msg =~ /^$nick[:,]\s+dekarma\s+(.*)$/) {
+        delete $karma->{'--'}->{$1};
+        delete $karma->{'++'}->{$1};
+        store $karma, $karma_place;
+        return 1;
+    }
+
+    # karma police
+    foreach my $word (keys %{ $karma->{'--'} }) {
+        if($msg =~ /\b\Q$word\E\b/i) {
+            $key = get_karma_key($who);
+            $karma->{$key}--;
+            store $karma, $karma_place;
+            $bot->say($chan, "$who-- # $word");
+            return 1;
+        }
+    }
+    foreach my $word (keys %{ $karma->{'++'} }) {
+        if($msg =~ /\b\Q$word\E\b/i) {
+            $key = get_karma_key($who);
+            $karma->{$key}++;
+            store $karma, $karma_place;
+            $bot->say($chan, "$who++ # $word");
+            return 1;
+        }
+    }
+
+    return 0 unless $msg =~ /^$nick: (.*)$/;
     my $cmd = $1;
 
     if ( $cmd =~ /^karma\s+(.*)$/ ) {
-    my $key = get_karma_key($1);
+        my $key = get_karma_key($1);
         $bot->say( $chan, $karma->{ $key } ) if exists $karma->{ $key };
+        return 1;
 
     } elsif ( $cmd =~ /^(\s*top\s*)?karma$/i ) {
         my %rank = ();
@@ -82,7 +125,7 @@ sub onPublic {
             $msg .= "$i. $rank{$k} ($k); ";
         }
         $bot->say( $chan, $msg );
-
+        return 1;
     }
 
     elsif ( $cmd =~ /^\s*worst\s*karma$/i ) {
@@ -102,19 +145,23 @@ sub onPublic {
         }
         $msg .= say10( sub { $a <=> $b }, \%rank, \%exceed);
         $bot->say( $chan, $msg );
+        return 1;
     }
 
     elsif ( $cmd =~ /^(.*)\+\+/ and $1 ) {
         my $key = get_karma_key($1);
         $karma->{ $key }++;
         store $karma, $karma_place;
+        return 1;
     }
 
     elsif ( $cmd =~ /^(.*)--/ and $1 ) {
         my $key = get_karma_key($1);
         $karma->{ $key }--;
         store $karma, $karma_place;
+        return 1;
     }
+    return 0;
 }
 
 
@@ -167,6 +214,17 @@ sub onPrivate {
 
 }
 
+sub inc {
+    my($who) = @_;
+    $karma->{$who}++;
+    store $karma, $karma_place;
+}
+
+sub dec {
+    my($who) = @_;
+    $karma->{$who}--;
+    store $karma, $karma_place;
+}
 
 sub say10 {
     my($sort, $rank, $exceed) = @_;
@@ -213,7 +271,10 @@ sub help {
 sub get_karma_key {
     my($key) = @_;
     my $wanted = uc($key);
+    my $without_underscores = $wanted;
+    $without_underscores =~ s/_+$//;
     foreach my $k (keys %$karma) {
+        return $k if uc($k) eq $without_underscores;
         return $k if uc($k) eq $wanted;
     }
     return $key;

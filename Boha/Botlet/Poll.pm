@@ -36,7 +36,7 @@ sub onInit {
 sub onPublic {
     my($bot, $who, $chan, $msg) = @_;
     my $nick = $bot->{nick};
-    return unless ($msg =~ /^(poll|polls)$/);
+    return 0 unless ($msg =~ /^(poll|polls)$/);
 }
 
 sub onPrivate  {
