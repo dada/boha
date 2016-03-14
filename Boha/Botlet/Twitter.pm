@@ -20,33 +20,33 @@ $VERSION = $1;
 #}
 
 sub onTopic {
-	my($bot, $chan, $topic) = @_;
-	print "Twitter.onTopic($chan, $topic)\n";
-	if(not update_twitter($topic)) {
-		$bot->say($bot->{chan}, "poor boha"); 
-	}
+    my($bot, $chan, $topic) = @_;
+    print "Twitter.onTopic($chan, $topic)\n";
+    if(not update_twitter($topic)) {
+        $bot->say($bot->{chan}, "poor boha");
+    }
 }
 
 sub help {
-	my($bot, $who, $topic) = @_;
-	$bot->say($who, "Twitter botlet $VERSION");
-	$bot->say($who, "none of your business");
+    my($bot, $who, $topic) = @_;
+    $bot->say($who, "Twitter botlet $VERSION");
+    $bot->say($who, "none of your business");
 }
 
 sub update_twitter {
-	my($status) = @_;
-	my $yaml = YAML::LoadFile("data/twitter.yml");
-	return 0 unless $yaml;
+    my($status) = @_;
+    my $yaml = YAML::LoadFile("data/twitter.yml");
+    return 0 unless $yaml;
         my $twitter = Net::Twitter->new(
-		traits   => [qw/OAuth API::REST/],
-		consumer_key        => $yaml->{consumer_key},
-		consumer_secret     => $yaml->{consumer_secret},
-		access_token        => $yaml->{oauth_token},
-		access_token_secret => $yaml->{oauth_token_secret},
-	);
+        traits   => [qw/OAuth API::REST/],
+        consumer_key        => $yaml->{consumer_key},
+        consumer_secret     => $yaml->{consumer_secret},
+        access_token        => $yaml->{oauth_token},
+        access_token_secret => $yaml->{oauth_token_secret},
+    );
 
-	my $response = $twitter->update( $status );
-	return $response;
+    my $response = $twitter->update( $status );
+    return $response;
 }
 
 1;

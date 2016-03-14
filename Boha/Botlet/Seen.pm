@@ -1,11 +1,11 @@
 # dedicated to dakkar
 
-package Boha::Botlet::Seen;
-
+package Boha::Botlet::Seen;
+
 use Storable;
-use Acme::Time::Baby 
-	language => 'it',
-	format => 'quando la lancetta lunga era sull%s e quella corta era sull%s';
+use Acme::Time::Baby
+    language => 'it',
+    format => 'quando la lancetta lunga era sull%s e quella corta era sull%s';
 
 
 use Time::Human;
@@ -24,70 +24,70 @@ $Time::Human::templates{Italian} = {
 $Time::Human::Language = "Italian";
 
 use Date::Roman;
-
-$VERSION = '$Id: Seen.pm,v 1.0 2007/07/19 15:40:00 dada Exp $';
-$VERSION =~ /v ([\d.]+)/;
-$VERSION = $1;
+
+$VERSION = '$Id: Seen.pm,v 1.0 2007/07/19 15:40:00 dada Exp $';
+$VERSION =~ /v ([\d.]+)/;
+$VERSION = $1;
 
 my $seen_place = 'data/seen';
 
 my $seen = {};
 
 sub onInit {
-	$Storable::accept_future_minor = 1;
-	$seen = retrieve( $seen_place ) if -e $seen_place;
-	delete $seen->{""};
+    $Storable::accept_future_minor = 1;
+    $seen = retrieve( $seen_place ) if -e $seen_place;
+    delete $seen->{""};
 }
-
-sub onPublic {
-	my($bot, $who, $chan, $msg) = @_;
 
-	print "SEEN: onPublic from $who ($msg)\n";
+sub onPublic {
+    my($bot, $who, $chan, $msg) = @_;
 
-	my $nick = $bot->{ nick };
-    
-	$seen->{lc $who} = time;
-	store $seen, $seen_place;
+    print "SEEN: onPublic from $who ($msg)\n";
 
-	if($msg =~ /^$nick: (hai visto|vedetti|vidisti|seen)\s+(.*)\??$/i) {
-		my $wanted = $2;
-		my $message = get_message($wanted);
-		if($message) {
-			$bot->say($chan, "$who: $message");
-		} else {
-			$bot->say($chan, "$who: nope");
-		}
-	}
-}
+    my $nick = $bot->{ nick };
+
+    $seen->{lc $who} = time;
+    store $seen, $seen_place;
+
+    if($msg =~ /^$nick: (hai visto|vedetti|vidisti|seen)\s+(.*)\??$/i) {
+        my $wanted = $2;
+        my $message = get_message($wanted);
+        if($message) {
+            $bot->say($chan, "$who: $message");
+        } else {
+            $bot->say($chan, "$who: nope");
+        }
+    }
+}
 
 sub get_message {
-	my($nick) = @_;
-	if(exists($seen->{lc $nick})) {
-		return "$nick era qui " . time2human($seen->{lc $nick});
-	} else {
-		return undef;
-	}
+    my($nick) = @_;
+    if(exists($seen->{lc $nick})) {
+        return "$nick era qui " . time2human($seen->{lc $nick});
+    } else {
+        return undef;
+    }
 }
 
-
-sub time2human
-{
-	my $time = shift;
-	
-	my(undef, undef, undef, $da, $ma, $ya) = localtime($time);
-	my(undef, undef, undef, $db, $mb, $yb) = localtime();
-	if($da == $db && $ma == $mb && $ya == $yb) {
-		return humanize(localtime($time));
-	} else {
-		my $r = Date::Roman->new(epoch => $time);
-		return "il " . $r ->as_string();
-	}
-}
+
+sub time2human
+{
+    my $time = shift;
+
+    my(undef, undef, undef, $da, $ma, $ya) = localtime($time);
+    my(undef, undef, undef, $db, $mb, $yb) = localtime();
+    if($da == $db && $ma == $mb && $ya == $yb) {
+        return humanize(localtime($time));
+    } else {
+        my $r = Date::Roman->new(epoch => $time);
+        return "il " . $r ->as_string();
+    }
+}
 
 sub dump {
-	use Data::Dumper;
-	print Dumper $seen;
+    use Data::Dumper;
+    print Dumper $seen;
 }
-
 
-1;
+
+1;

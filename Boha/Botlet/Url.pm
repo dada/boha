@@ -32,7 +32,7 @@ sub onPublic {
                 ->result;
 
             if ( $result !~ /ok/i ) {
-                $bot->say( $chan, 
+                $bot->say( $chan,
                      'Credo che qualcosa non sia andato per il verso giusto'
                          );
             }
@@ -43,12 +43,12 @@ sub onPublic {
         else {
             $bot->say( $who, "'$1' non mi pare un URL, spiegati meglio" );
             $bot->say( $who,   "Ti ricordo che la sintassi per insegnarmi "
-                             . "URL e` url <url> <descrizione>"  
+                             . "URL e` url <url> <descrizione>"
                      );
         }
     }
 
-	print "received cmd: '$cmd'\n";
+    print "received cmd: '$cmd'\n";
 }
 
 my $uri_tester = URI::Find->new( sub {} );
