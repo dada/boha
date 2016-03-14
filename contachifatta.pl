@@ -6,6 +6,7 @@ while(<FACTS>) {
 }
 close(FACTS);
 
+print "AUTORI:\n";
 foreach my $nick (sort { $fatti{$b} <=> $fatti{$a} } keys %fatti) {
 
     my $menz = 0;
@@ -13,13 +14,14 @@ foreach my $nick (sort { $fatti{$b} <=> $fatti{$a} } keys %fatti) {
         $menz++ if $fact =~ /\b\Q$nick\E\b/i;
     }
 
-    $menz{$nick} = $menz;
+    $menz{lc $nick} = $menz;
 
     print "$nick: $fatti{$nick}, ";
 }
 
 print "\n\n";
 
+print "MENZIONI:\n";
 foreach my $nick (sort { $menz{$b} <=> $menz{$a} } keys %menz) {
     print "$nick: $menz{$nick}, ";
 }
